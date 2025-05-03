@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sensor Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        canvas { max-width: 100%; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <h1>Sleep Sensor Dashboard</h1>
+    <div id="charts"></div>
+
+    <script>
+        const sensorFields = ["temperature", "humidity", "heat_index", "light", "sound"];
+
+        async function fetchSensorData() {
+            const response = await fetch('/sensorData');
+            const data = await response.json();
+            return data;
+        }
+        async function fetchSleepEvents() {
+            const res = await fetch('/sleepEvents');
+            return await res.json();
+        }
+
+        function createChart(id, label, labels, dataPoints) {
+            const canvas = document.createElement('canvas');
+            document.getElementById('charts').appendChild(canvas);
+
+            new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: label,
+                        data: dataPoints,
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: { title: { display: true, text: 'Timestamp' }, ticks: { maxRotation: 45, minRotation: 45 }},
+                        y: { title: { display: true, text: label } }
+                    }
+                }
+            });
+        }
+
+        async function renderCharts() {
+            const data = await fetchSensorData();
+
+            if (!Array.isArray(data) || data.length === 0) {
+                document.getElementById('charts').innerHTML = "<p>No sensor data available.</p>";
+                return;
+            }
+
+            const timestamps = data.map(row => row.timestamp);
+            sensorFields.forEach(field => {
+                const values = data.map(row => parseFloat(row[field]));
+                createChart(field, field.charAt(0).toUpperCase() + field.slice(1), timestamps, values);
+            });
+        }
+
+        renderCharts();
+    </script>
+</body>
+</html>

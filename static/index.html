@@ -1,41 +1,159 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Sensor Dashboard</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta charset="UTF-8">
+    <title>Sleep Sensor Dashboard</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        canvas { max-width: 100%; margin: 20px 0; }
+        body {
+            font-family: sans-serif;
+            margin: 20px;
+            background: #f8f9fa;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .control-panel {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .toggle-group {
+            display: inline-block;
+            margin: 0 15px;
+        }
+        .toggle-label {
+            font-weight: bold;
+            margin-right: 5px;
+        }
+        .toggle-control {
+            padding: 5px 10px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            background: #f1f1f1;
+            cursor: pointer;
+            margin: 0 5px;
+        }
+        .toggle-control.active {
+            background: #4CAF50;
+            color: white;
+            border-color: #4CAF50;
+        }
+        canvas {
+            max-width: 100%;
+            margin-bottom: 40px;
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
     </style>
 </head>
 <body>
     <h1>Sleep Sensor Dashboard</h1>
+
+    <div class="control-panel">
+        <div class="toggle-group">
+            <span class="toggle-label">Show Events:</span>
+            <button class="toggle-control active" data-event="SOUND">Sound</button>
+            <button class="toggle-control active" data-event="LIGHT">Light</button>
+            <button class="toggle-control active" data-event="MOVEMENT">Movement</button>
+        </div>
+        <button id="toggle-all" class="toggle-control active">All Events</button>
+    </div>
+
     <div id="charts"></div>
+
+    <!-- Chart.js and Annotation Plugin -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.4.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/luxon@3.3.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.3.1"></script>
 
     <script>
         const sensorFields = ["temperature", "humidity", "heat_index", "light", "sound"];
+        const charts = [];
+        let allSleepEvents = [];
+        const eventVisibility = {
+            "SOUND": true,
+            "LIGHT": true,
+            "MOVEMENT": true
+        };
+
+        const eventColors = {
+            "SOUND": 'blue',
+            "LIGHT": 'yellow',
+            "MOVEMENT": 'red'
+        };
 
         async function fetchSensorData() {
-            const response = await fetch('/sensorData');
-            const data = await response.json();
-            return data;
+            const res = await fetch('/sensorData');
+            return await res.json();
         }
+
         async function fetchSleepEvents() {
             const res = await fetch('/sleepEvents');
             return await res.json();
         }
 
-        function createChart(id, label, labels, dataPoints) {
+        function parseTimestamp(timestamp) {
+            // Assuming timestamp is in a standard format like ISO
+            return new Date(timestamp);
+        }
+
+        function getVisibleAnnotations(sleepEvents) {
+            const annotations = {};
+
+            sleepEvents.forEach((event, index) => {
+                // Only add annotation if this event type is visible
+                if (eventVisibility[event.sleep_event]) {
+                    annotations[`line${index}`] = {
+                        type: 'line',
+                        xMin: parseTimestamp(event.timestamp),
+                        xMax: parseTimestamp(event.timestamp),
+                        borderColor: eventColors[event.sleep_event],
+                        borderWidth: 1,
+                        label: {
+                            content: event.sleep_event,
+                            enabled: true,
+                            position: 'start',
+                            backgroundColor: 'rgba(255,0,0,0.1)',
+                            color: eventColors[event.sleep_event],
+                            font: { size: 10 }
+                        }
+                    };
+                }
+            });
+
+            return annotations;
+        }
+
+        function updateAllCharts() {
+            charts.forEach(chart => {
+                chart.options.plugins.annotation.annotations = getVisibleAnnotations(allSleepEvents);
+                chart.update();
+            });
+        }
+
+        function createChart(label, data, sleepEvents) {
             const canvas = document.createElement('canvas');
             document.getElementById('charts').appendChild(canvas);
 
-            new Chart(canvas, {
+            // Convert data to proper timestamp format for Chart.js time scale
+            const chartData = data.map(point => ({
+                x: parseTimestamp(point.timestamp),
+                y: parseFloat(point[label.toLowerCase()])
+            }));
+
+            const chartInstance = new Chart(canvas, {
                 type: 'line',
                 data: {
-                    labels: labels,
                     datasets: [{
                         label: label,
-                        data: dataPoints,
+                        data: chartData,
                         borderColor: 'rgba(75, 192, 192, 1)',
                         backgroundColor: 'rgba(75, 192, 192, 0.2)',
                         fill: true,
@@ -45,28 +163,98 @@
                 options: {
                     responsive: true,
                     scales: {
-                        x: { title: { display: true, text: 'Timestamp' }, ticks: { maxRotation: 45, minRotation: 45 }},
-                        y: { title: { display: true, text: label } }
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'minute',
+                                stepSize: 15,  // Show ticks every 15 minutes
+                                displayFormats: {
+                                    minute: 'HH:mm'  // Show as hours:minutes
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Time'
+                            },
+                            ticks: {
+                                source: 'auto',
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: label
+                            }
+                        }
+                    },
+                    plugins: {
+                        annotation: {
+                            annotations: getVisibleAnnotations(sleepEvents)
+                        }
                     }
                 }
             });
+
+            // Add chart to the global array for later updates
+            charts.push(chartInstance);
         }
 
         async function renderCharts() {
-            const data = await fetchSensorData();
+            try {
+                const [sensorData, sleepEvents] = await Promise.all([fetchSensorData(), fetchSleepEvents()]);
 
-            if (!Array.isArray(data) || data.length === 0) {
-                document.getElementById('charts').innerHTML = "<p>No sensor data available.</p>";
-                return;
+                if (!Array.isArray(sensorData) || sensorData.length === 0) {
+                    document.getElementById('charts').innerHTML = "<p>No sensor data available.</p>";
+                    return;
+                }
+
+                // Store sleep events globally for filtering
+                allSleepEvents = sleepEvents;
+
+                sensorFields.forEach(field => {
+                    const fieldName = field.charAt(0).toUpperCase() + field.slice(1);
+                    createChart(fieldName, sensorData, sleepEvents);
+                });
+
+                // Set up event handlers for toggle buttons
+                document.querySelectorAll('.toggle-control[data-event]').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const eventType = this.getAttribute('data-event');
+                        this.classList.toggle('active');
+                        eventVisibility[eventType] = this.classList.contains('active');
+                        updateAllCharts();
+                    });
+                });
+
+                // Toggle all events button
+                document.getElementById('toggle-all').addEventListener('click', function() {
+                    const isActive = this.classList.toggle('active');
+
+                    // Update all individual event toggles
+                    document.querySelectorAll('.toggle-control[data-event]').forEach(button => {
+                        if (isActive) {
+                            button.classList.add('active');
+                        } else {
+                            button.classList.remove('active');
+                        }
+                    });
+
+                    // Update visibility state
+                    Object.keys(eventVisibility).forEach(key => {
+                        eventVisibility[key] = isActive;
+                    });
+
+                    updateAllCharts();
+                });
+            } catch (error) {
+                console.error("Error rendering charts:", error);
+                document.getElementById('charts').innerHTML = `<p>Error loading data: ${error.message}</p>`;
             }
-
-            const timestamps = data.map(row => row.timestamp);
-            sensorFields.forEach(field => {
-                const values = data.map(row => parseFloat(row[field]));
-                createChart(field, field.charAt(0).toUpperCase() + field.slice(1), timestamps, values);
-            });
         }
 
+        // Start the application
         renderCharts();
     </script>
 </body>

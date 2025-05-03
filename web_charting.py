@@ -24,7 +24,6 @@ async def get_sensor_data():
         reader = csv.DictReader(file)
         data = [row for row in reader]
     print(data)
-    print("HELLLLLO")
     return data
 
 @app.get("/sleepEvents")

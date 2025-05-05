@@ -20,14 +20,33 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             margin-bottom: 30px;
             text-align: center;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+        }
+        .date-selector {
+            display: flex;
+            align-items: center;
+            margin-right: 15px;
+        }
+        .night-select {
+            padding: 5px 10px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            margin-left: 8px;
+            min-width: 200px;
+            font-size: 16px;
         }
         .toggle-group {
-            display: inline-block;
-            margin: 0 15px;
+            display: inline-flex;
+            align-items: center;
+            margin: 0;
         }
         .toggle-label {
             font-weight: bold;
             margin-right: 5px;
+            white-space: nowrap;
         }
         .toggle-control {
             padding: 5px 10px;
@@ -60,8 +79,13 @@
             border-color: darkred;
             color: white;
         }
+        .toggle-sleepwake {
+            background-color: green;
+            border-color: darkgreen;
+            color: white;
+        }
         #toggle-all {
-            background: linear-gradient(to right, blue, yellow, red);
+            background: linear-gradient(to right, blue, yellow, red, green);
             border-color: #333;
             color: white;
             text-shadow: 1px 1px 1px rgba(0,0,0,0.5);
@@ -74,22 +98,49 @@
             padding: 15px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
+        .status-message {
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .loading {
+            background-color: #e3f2fd;
+            color: #0d47a1;
+        }
+        .error {
+            background-color: #ffebee;
+            color: #c62828;
+        }
     </style>
 </head>
 <body>
     <h1>Sleep Sensor Dashboard</h1>
 
     <div class="control-panel">
+        <div class="date-selector">
+            <label for="night-selector" class="toggle-label">Select Night:</label>
+            <select id="night-selector" class="night-select">
+                <option value="">Loading available nights...</option>
+            </select>
+        </div>
         <div class="toggle-group">
             <span class="toggle-label">Show Events:</span>
             <button class="toggle-control toggle-sound active" data-event="SOUND">Sound</button>
             <button class="toggle-control toggle-light active" data-event="LIGHT">Light</button>
             <button class="toggle-control toggle-movement active" data-event="MOVEMENT">Movement</button>
+            <button class="toggle-control toggle-sleepwake active" data-event="SLEEPWAKE">Sleep/Wake</button>
         </div>
         <button id="toggle-all" class="toggle-control active">All Events</button>
     </div>
 
+    <div id="chart-status" class="status-message"></div>
     <div id="charts"></div>
+    <div id="journal-entry" style="margin-top: 40px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+        <h2>Sleep Journal Entry</h2>
+        <p id="journal-text">Loading journal entry...</p>
+    </div>
+
 
     <!-- Chart.js and Annotation Plugin -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -101,26 +152,79 @@
         const sensorFields = ["temperature", "humidity", "heat_index", "light", "sound"];
         const charts = [];
         let allSleepEvents = [];
+        let sleepWakeTimes = [];
+        let selectedNight = '';
         const eventVisibility = {
             "SOUND": true,
             "LIGHT": true,
-            "MOVEMENT": true
+            "MOVEMENT": true,
+            "SLEEPWAKE": true
         };
 
         const eventColors = {
             "SOUND": 'blue',
             "LIGHT": 'yellow',
-            "MOVEMENT": 'red'
+            "MOVEMENT": 'red',
+            "SLEEPWAKE": 'green'
         };
 
-        async function fetchSensorData() {
-            const res = await fetch('/sensorData');
-            return await res.json();
+        async function loadJournalEntry(night) {
+            try {
+                const res = await fetch(`/journal?night=${night}`);
+                if (!res.ok) throw new Error("Failed to fetch journal entry");
+                const text = await res.text();
+                document.getElementById('journal-text').textContent = text || "No journal entry available.";
+            } catch (error) {
+                console.error("Error loading journal:", error);
+                document.getElementById('journal-text').textContent = "Error loading journal entry.";
+            }
+        }
+        // Fetch available nights
+        async function fetchAvailableNights() {
+            try {
+                const res = await fetch('/availableNights');
+                const nights = await res.json();
+                return nights;
+            } catch (error) {
+                console.error("Error fetching available nights:", error);
+                return [];
+            }
         }
 
-        async function fetchSleepEvents() {
-            const res = await fetch('/sleepEvents');
-            return await res.json();
+        // Fetch sensor data for a specific night
+        async function fetchSensorData(night) {
+            updateStatus('Loading sensor data...', 'loading');
+            try {
+                const res = await fetch(`/sensorData?night=${night}`);
+                const data = await res.json();
+                updateStatus('', '');
+                return data;
+            } catch (error) {
+                updateStatus(`Error loading sensor data: ${error.message}`, 'error');
+                return [];
+            }
+        }
+
+        // Fetch sleep events for a specific night
+        async function fetchSleepEvents(night) {
+            try {
+                const res = await fetch(`/sleepEvents?night=${night}`);
+                return await res.json();
+            } catch (error) {
+                console.error("Error fetching sleep events:", error);
+                return [];
+            }
+        }
+
+        // Fetch sleep/wake times for a specific night
+        async function fetchSleepWakeTimes(night) {
+            try {
+                const res = await fetch(`/groundTruth?night=${night}`);
+                return await res.json();
+            } catch (error) {
+                console.error("Error fetching sleep/wake times:", error);
+                return [];
+            }
         }
 
         function parseTimestamp(timestamp) {
@@ -128,9 +232,19 @@
             return new Date(timestamp);
         }
 
-        function getVisibleAnnotations(sleepEvents) {
+        function updateStatus(message, type) {
+            const statusEl = document.getElementById('chart-status');
+            statusEl.textContent = message;
+            statusEl.className = 'status-message';
+            if (type) {
+                statusEl.classList.add(type);
+            }
+        }
+
+        function getVisibleAnnotations(sleepEvents, sleepWakeTimes) {
             const annotations = {};
 
+            // Add regular sleep events
             sleepEvents.forEach((event, index) => {
                 // Only add annotation if this event type is visible
                 if (eventVisibility[event.sleep_event]) {
@@ -140,21 +254,50 @@
                         xMax: parseTimestamp(event.timestamp),
                         borderColor: eventColors[event.sleep_event],
                         borderWidth: 1,
+                        label: {
+                            content: event.sleep_event,
+                            enabled: true,
+                            position: 'start',
+                            backgroundColor: 'rgba(255,0,0,0.1)',
+                            color: eventColors[event.sleep_event],
+                            font: { size: 10 }
+                        }
                     };
                 }
             });
+
+            // Add sleep/wake time events if visible
+            if (eventVisibility["SLEEPWAKE"] && sleepWakeTimes.length > 0) {
+                sleepWakeTimes.forEach((timePoint, index) => {
+                    annotations[`sleepwake${index}`] = {
+                        type: 'line',
+                        xMin: parseTimestamp(timePoint.timestamp),
+                        xMax: parseTimestamp(timePoint.timestamp),
+                        borderColor: 'green',
+                        borderWidth: 5,
+                        label: {
+                            content: "Ground Truth", // "SLEEP" or "WAKE"
+                            enabled: true,
+                            position: 'top',
+                            backgroundColor: 'rgba(0,128,0,0.2)',
+                            color: 'darkgreen',
+                            font: { size: 12, weight: 'bold' }
+                        }
+                    };
+                });
+            }
 
             return annotations;
         }
 
         function updateAllCharts() {
             charts.forEach(chart => {
-                chart.options.plugins.annotation.annotations = getVisibleAnnotations(allSleepEvents);
+                chart.options.plugins.annotation.annotations = getVisibleAnnotations(allSleepEvents, sleepWakeTimes);
                 chart.update();
             });
         }
 
-        function createChart(label, data, sleepEvents) {
+        function createChart(label, data, sleepEvents, sleepWakeTimes) {
             const canvas = document.createElement('canvas');
             document.getElementById('charts').appendChild(canvas);
 
@@ -207,7 +350,7 @@
                     },
                     plugins: {
                         annotation: {
-                            annotations: getVisibleAnnotations(sleepEvents)
+                            annotations: getVisibleAnnotations(sleepEvents, sleepWakeTimes)
                         }
                     }
                 }
@@ -217,24 +360,97 @@
             charts.push(chartInstance);
         }
 
-        async function renderCharts() {
+        // Clear and rebuild charts for a specific night
+        async function loadNightData(night) {
+            if (!night) return;
+
+            selectedNight = night;
+
+            // Clear existing charts
+            document.getElementById('charts').innerHTML = '';
+            charts.length = 0;  // Clear chart references
+
             try {
-                const [sensorData, sleepEvents] = await Promise.all([fetchSensorData(), fetchSleepEvents()]);
+                // Fetch data for the selected night
+                const [sensorData, sleepEvents, sleepWakeData, journal] = await Promise.all([
+                    fetchSensorData(night),
+                    fetchSleepEvents(night),
+                    fetchSleepWakeTimes(night),
+                    loadJournalEntry(night)
+                ]);
 
                 if (!Array.isArray(sensorData) || sensorData.length === 0) {
-                    document.getElementById('charts').innerHTML = "<p>No sensor data available.</p>";
+                    document.getElementById('charts').innerHTML = "<p>No sensor data available for the selected night.</p>";
                     return;
                 }
 
-                // Store sleep events globally for filtering
+                // Store sleep events and sleep/wake times globally for filtering
                 allSleepEvents = sleepEvents;
+                sleepWakeTimes = sleepWakeData;
 
+                // Create charts for each sensor field
                 sensorFields.forEach(field => {
                     const fieldName = field.charAt(0).toUpperCase() + field.slice(1);
-                    createChart(fieldName, sensorData, sleepEvents);
+                    createChart(fieldName, sensorData, sleepEvents, sleepWakeData);
                 });
+            } catch (error) {
+                console.error("Error loading night data:", error);
+                document.getElementById('charts').innerHTML = `<p>Error loading data: ${error.message}</p>`;
+            }
+        }
 
-                // Set up event handlers for toggle buttons
+        // Initialize the dropdown with available nights
+        async function initializeNightSelector() {
+            const nightSelector = document.getElementById('night-selector');
+            const nights = await fetchAvailableNights();
+
+            if (nights.length === 0) {
+                nightSelector.innerHTML = '<option value="">No nights available</option>';
+                return;
+            }
+
+            // Sort nights chronologically (assuming they're ISO date strings or similar)
+            nights.sort();
+
+            // Build the dropdown options
+            nightSelector.innerHTML = nights.map(night =>
+                `<option value="${night}">${formatNightLabel(night)}</option>`
+            ).join('');
+
+            // Set the most recent night as default
+            selectedNight = nights[nights.length - 1];
+            nightSelector.value = selectedNight;
+
+            // Load data for the selected night
+            loadNightData(selectedNight);
+
+            // Add change event listener
+            nightSelector.addEventListener('change', function() {
+                loadNightData(this.value);
+            });
+        }
+
+        // Format the night value for display in the dropdown
+        function formatNightLabel(night) {
+            // This function can be customized based on your night ID format
+            // For example, if night is a date string like "2023-05-01"
+            try {
+                const date = new Date(night);
+                return date.toLocaleDateString('en-US', {
+                    weekday: 'short',
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                });
+            } catch (e) {
+                // If parsing fails, just return the original
+                return night;
+            }
+        }
+
+        async function renderCharts() {
+            try {
+                // Initialize event handlers for toggle buttons
                 document.querySelectorAll('.toggle-control[data-event]').forEach(button => {
                     button.addEventListener('click', function() {
                         const eventType = this.getAttribute('data-event');
@@ -264,9 +480,12 @@
 
                     updateAllCharts();
                 });
+
+                // Initialize the night selector
+                await initializeNightSelector();
             } catch (error) {
-                console.error("Error rendering charts:", error);
-                document.getElementById('charts').innerHTML = `<p>Error loading data: ${error.message}</p>`;
+                console.error("Error initializing dashboard:", error);
+                updateStatus(`Error initializing dashboard: ${error.message}`, 'error');
             }
         }
 

@@ -242,12 +242,18 @@
         }
 
         function getVisibleAnnotations(sleepEvents, sleepWakeTimes) {
+            console.log("here")
             const annotations = {};
 
+            console.log(eventVisibility)
             // Add regular sleep events
             sleepEvents.forEach((event, index) => {
                 // Only add annotation if this event type is visible
+                // Event visibility not matching?
+                console.log(event)
+                console.log(eventVisibility[event.sleep_event])
                 if (eventVisibility[event.sleep_event]) {
+                    console.log("inside")
                     annotations[`line${index}`] = {
                         type: 'line',
                         xMin: parseTimestamp(event.timestamp),
@@ -276,7 +282,7 @@
                         borderColor: 'green',
                         borderWidth: 5,
                         label: {
-                            content: "Ground Truth", // "SLEEP" or "WAKE"
+                            content: "User Input", // "SLEEP" or "WAKE"
                             enabled: true,
                             position: 'top',
                             backgroundColor: 'rgba(0,128,0,0.2)',
@@ -378,7 +384,7 @@
                     fetchSleepWakeTimes(night),
                     loadJournalEntry(night)
                 ]);
-
+                console.log(sleepEvents);
                 if (!Array.isArray(sensorData) || sensorData.length === 0) {
                     document.getElementById('charts').innerHTML = "<p>No sensor data available for the selected night.</p>";
                     return;
@@ -435,7 +441,7 @@
             // This function can be customized based on your night ID format
             // For example, if night is a date string like "2023-05-01"
             try {
-                const date = new Date(night);
+                const date = new Date(night + " PDT");
                 return date.toLocaleDateString('en-US', {
                     weekday: 'short',
                     month: 'short',

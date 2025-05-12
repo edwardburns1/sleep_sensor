@@ -53,7 +53,7 @@ async def receive_sleep_event(data: SleepEventData):
     with open(file_path, mode="a", newline="") as file:
         writer = csv.writer(file)
         if write_header:
-            writer.writerow(["timestamp", "event"])
+            writer.writerow(["timestamp", "sleep_event"])
         writer.writerow([now, event.name])
     return {"status": "success"}
 

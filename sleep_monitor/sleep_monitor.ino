@@ -49,6 +49,7 @@ void setup() {
   // movement_setup();
 
   dht.begin();
+  delay(10000);
 }
 
 void loop() {
@@ -232,7 +233,7 @@ void movement_detection(){
   }
 
   int rolling_avg = get_rolling_avg(MOVEMENT_WINDOW_L, movement_window);
-  if(sum > rolling_avg + 300 && millis() - movementDebounceTime > DEBOUNCE_TIME){
+  if(sum > rolling_avg + 200 && millis() - movementDebounceTime > DEBOUNCE_TIME){
     Serial.println("Movement Detected!");
     sendSleepEvent(MOVEMENT);
     movementDebounceTime = millis();
@@ -253,18 +254,29 @@ int get_rolling_avg(int n, int * window){
 #define DATA_INTERVAL 15 * 60 * 1000
 unsigned long lastDataTime = 0;
 void data_handler(int light, int sound){
+
+  int fail_count = 0;
   if(millis() - lastDataTime > DATA_INTERVAL){
 
-    float h = dht.readHumidity();
-    // Read temperature as Celsius (the default)
-    float f = dht.readTemperature(true);
+    while(fail_count < 10){
+      float h = dht.readHumidity();
+      // Read temperature as Celsius (the default)
+      float f = dht.readTemperature(true);
 
-    float hif = dht.computeHeatIndex(f, h);
+      float hif = dht.computeHeatIndex(f, h);
 
-    Serial.printf("Sending Sensor Data, Humidity: %f, Temp: %f\n", h, f);
-    sendSensorData(f, h, hif, light, sound);
+      if(isnan(h) || isnan(f)) {
+        fail_count++;
+        delay(3000);
+        continue;
+      }
 
-    lastDataTime = millis();
+      Serial.printf("Sending Sensor Data, Humidity: %f, Temp: %f\n", h, f);
+      sendSensorData(f, h, hif, light, sound);
+
+      lastDataTime = millis();
+      return;
+    }
   }
 }
 

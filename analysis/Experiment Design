@@ -1,1 +1,29 @@
 5 Total Sensors
+
+
+Preface:
+Worst Sleeping Quality of my life
+-- Actual Sleep was good, but sleep incidence was incredibly high
+Very Anxiety Induced
+Looked for external solutions. Melatonin, Unisom, Supplements, Chamomile tea, etc..
+Lot's of getting up in the night.
+Good mix of Insomnia and Normal Sleep data to analyze.
+
+Things to track:
+Total Sleep Length
+Average Error of Sleep Tracker vs ground truth
+Impact of Melatonin/Sleeping pills on Sleep
+Quality of different sensors
+Impact of Temp/Humidity/Sound on sleep quality
+Impact of Alcohol on Sleep?
+
+Things that I know its good at:
+Tracking night sleep disruptions events
+Tracking Severity of sleep disruption (multi sleep-event)
+
+Open Questions:
+Were Insomnia Nights marked by way more sleep events? -- Is it a good indicator?
+How many false alarms? Too sensitive or the opposite?
+
+Limitations:
+Some missed night data, because of misconfigured sensors/server.

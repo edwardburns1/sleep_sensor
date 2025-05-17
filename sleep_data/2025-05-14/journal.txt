@@ -1,0 +1,3 @@
+Bad dataset, incomplete sending, and noisy accelerometer data (maybe some wires got bumped?)
+
+Went to bed around 11:30, took me several hours to fall asleep, but I eventually did

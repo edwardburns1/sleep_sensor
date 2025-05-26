@@ -3,4 +3,4 @@ fall asleep, and I got up at some point to use the bathroom and turn on my fan. 
 probably got out of bed at 8:10 am.
 
 Sleep Quality: 6
-Sleep Incidence: 60 min
+Sleep Onset Latency: 60 min

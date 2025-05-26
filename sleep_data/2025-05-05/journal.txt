@@ -2,4 +2,5 @@ Got in bed around 11, but read for about 30 minutes. Fell asleep very quickly. M
 the night. Consumed 1 alcoholic beverages the night before.
 
 Sleep Quality: 7
-Sleep Incidence: 15 min
+Sleep Onset Latency: 15 min
+Sleep Duration: 9.5 hours

@@ -3,4 +3,4 @@ Finally fell asleep around 4:15-4:30. Got up around 11 am the next day. Consumed
 noticed.
 
 Sleep Quality: 1
-Sleep Incidence: 300 min
+Sleep Onset Latency: 300 min

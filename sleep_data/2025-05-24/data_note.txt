@@ -1,0 +1,2 @@
+In the hotel, brought the sleep monitor with me, changed the data polling interval to 1 min
+(just to see).

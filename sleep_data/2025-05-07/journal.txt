@@ -8,4 +8,4 @@ hour until 11:30. I've noticed that temperature changes affect my initial sleep 
 insomnia nights like this
 
 Sleep Quality: 1
-Sleep Incidence: 360 min
+Sleep Onset Latency: 360 min

@@ -1,5 +1,6 @@
 In bed around 10:20. Took me a while to fall asleep. I got up at around 11:30 to do pushups and take a melatonin. Fell asleep soon
 after, but awoke briefly around 3am. Fully woke and got up at 8:00am.
 
-Sleep Incidence: 75 min
+Sleep Onset Latency: 75 min
 Sleep Quality: 6
+Sleep Duration: 8 hours

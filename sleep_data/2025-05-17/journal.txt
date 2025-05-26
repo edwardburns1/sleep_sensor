@@ -3,4 +3,4 @@ to fall asleep. I got up several times to adjust my fan. Eventually, I fell asle
 hour. I woke up (by alarm) at 9:30, but I didn't get out of bed full until 10:20.
 
 Sleep Quality: 6
-Sleep Incidence: 120 min
+Sleep Onset Latency: 120 min

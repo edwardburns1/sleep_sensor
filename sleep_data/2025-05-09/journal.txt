@@ -7,5 +7,5 @@ Final Sleep Time: 7am
 Wake Time: 10:45am
 Real Rise Time: 11:55 am
 
-Sleep Incidence: 300 min
+Sleep Onset Latency: 300 min
 Sleep Quality: 1

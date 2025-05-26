@@ -3,5 +3,6 @@ about 30 minutes of tossing and turning, I got up, did 20 pushups and took a mel
 shortly thereafter. At some point in the night, I was woken up by birds outside my window, got up to close
 my window, and then fell asleep again. I woke up at 8am.
 
-Sleep quality: 4
-Sleep incidence: 45 min
+Sleep Quality: 4
+Sleep Onset Latency: 45 min
+Sleep Duration:

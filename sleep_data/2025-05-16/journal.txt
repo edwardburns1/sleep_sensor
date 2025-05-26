@@ -3,4 +3,4 @@ an after-party. I got up at 1am to turn on some white-noise, and then fell aslee
 at around 10am.
 
 Sleep Quality: 9
-Sleep Incidence: 60 min
+Sleep Onset Latency: 60 min

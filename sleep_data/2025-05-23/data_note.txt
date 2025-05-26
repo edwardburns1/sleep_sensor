@@ -1,0 +1,3 @@
+Control Condition. I did not sleep in my own room this night (I was staying in a hotel).
+Validates the absence of false positives. Left my room near 10pm, arrived back around 11am the next
+day.

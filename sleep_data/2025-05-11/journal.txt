@@ -6,6 +6,6 @@ when. However, when I did finally fall asleep, the sleep was extremely restful a
 8am, but went back to bed shortly thereafter to catch up on sleep, and try to heal by body some more. I ultimately
 woke up at 11am, and decided to get out of bed at around 11:45am.
 
-Sleep Incidence: 180 min (guess)
+Sleep Onset Latency: 180 min (guess)
 Sleep Quality: 5
 Insomnia

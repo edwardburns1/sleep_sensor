@@ -129,13 +129,14 @@ def plot_keyword_counts(keyword, counts, output_path):
 top_directory = "sleep_data"
 latency_data, quality_data, keyword_counts = extract_sleep_data_and_keyword_counts(top_directory)
 
-plot_time_series(latency_data, "Sleep Onset Latency Over Time", "Sleep Onset Latency (minutes)", "images/sleep_latency.png")
+plot_time_series(latency_data, "Sleep Onset Latency Over Time", "Sleep Onset Latency (minutes)",
+                 "../images/sleep_latency.png")
 
-plot_time_series(quality_data, "Sleep Quality Over Time", "Sleep Quality (1–5 scale)", "images/sleep_quality.png")
+plot_time_series(quality_data, "Sleep Quality Over Time", "Sleep Quality (1–5 scale)", "../images/sleep_quality.png")
 
 # Categorize and plot sleep onset latency
 latency_categories = categorize_latency(latency_data)
-plot_latency_categories(latency_categories, "images/latency_categories.png")
+plot_latency_categories(latency_categories, "../images/latency_categories.png")
 
 # Plot keyword mentions
 for keyword, counts in keyword_counts.items():

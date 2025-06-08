@@ -13,9 +13,11 @@ int accelZ = A3;
 int audio_pin = A4;
 int buttonPin = 23;
 
+//Home wifi
 const char* ssid = "SpectrumSetup-E0";
-const char* password = "smarttrain175";
 const char* serverName = "http://192.168.1.145:6543/";
+const char* password = "REDACTED";
+
 
 DHT dht(DHTPIN, DHTTYPE);
 
@@ -39,7 +41,7 @@ void setup() {
 
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
-  
+
   Serial.print("\nConnecting");
   while(WiFi.status() != WL_CONNECTED){
     Serial.print(".");
@@ -75,7 +77,7 @@ void loop() {
 
 
 
-  
+
   delay(10);
 
 }
@@ -114,9 +116,9 @@ void sendPostData(String jsonPayload, String endpoint){
 }
 void sendSensorData(float temperature, float humidity, float heat_index, int light, int sound) {
       // Create JSON payload
-    
-    String jsonPayload = "{\"temperature\": " + String(temperature, 2) + 
-                         ", \"humidity\": " + String(humidity, 2) + 
+
+    String jsonPayload = "{\"temperature\": " + String(temperature, 2) +
+                         ", \"humidity\": " + String(humidity, 2) +
                          ", \"heat_index\": " + String(heat_index, 2) +
                          ", \"light\": " + String(light) +
                          ", \"sound\": " + String(sound) +"}";
@@ -132,7 +134,7 @@ void sendGroundTruth(){
   sendPostData("", "groundTruth");
 }
 #define SOUND_WINDOW_L 100
-int sound_window[SOUND_WINDOW_L]; 
+int sound_window[SOUND_WINDOW_L];
 int sound_i = 0;
 
 int sound_setup = SOUND_WINDOW_L;
@@ -149,7 +151,7 @@ int sound_detection(){
   }
 
   int rolling_avg = get_rolling_avg(SOUND_WINDOW_L, sound_window);
-  if(audio > rolling_avg + 500 && (millis() - soundDebounceTime > DEBOUNCE_TIME)){
+  if(audio > rolling_avg + 300 && (millis() - soundDebounceTime > DEBOUNCE_TIME)){
     Serial.println("Sound Detected!");
     sendSleepEvent(SOUND);
     soundDebounceTime = millis();
@@ -160,7 +162,7 @@ int sound_detection(){
 }
 
 #define LIGHT_WINDOW_L 100
-int light_window[LIGHT_WINDOW_L]; 
+int light_window[LIGHT_WINDOW_L];
 int light_i = 0;
 
 int light_setup = LIGHT_WINDOW_L;
@@ -213,7 +215,7 @@ int light_detection(){
 
 
 #define MOVEMENT_WINDOW_L 1000
-int movement_window[MOVEMENT_WINDOW_L]; 
+int movement_window[MOVEMENT_WINDOW_L];
 int move_i = 0;
 
 int move_setup = MOVEMENT_WINDOW_L;
@@ -251,7 +253,7 @@ int get_rolling_avg(int n, int * window){
   return avg / n;
 }
 
-#define DATA_INTERVAL 15 * 60 * 1000
+#define DATA_INTERVAL  60 * 1000
 unsigned long lastDataTime = 0;
 void data_handler(int light, int sound){
 

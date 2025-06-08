@@ -10,7 +10,7 @@ def compute_event_latency_correlation(top_dir):
     latencies = []
     event_counts = []
 
-    skip_dates = {"2025-05-20", "2025-05-21", "2025-05-22", "2025-05-23"}
+    skip_dates = {"2025-05-19", "2025-05-20", "2025-05-21", "2025-05-22", "2025-05-23"}
 
     for entry in os.listdir(top_dir):
         if entry in skip_dates:
@@ -73,7 +73,7 @@ def compute_event_latency_correlation(top_dir):
     plt.ylabel("Sleep Onset Latency (minutes)")
     plt.grid(True)
     plt.tight_layout()
-    os.makedirs("images", exist_ok=True)
+    os.makedirs("../images", exist_ok=True)
     plt.savefig("images/event_latency_correlation.png")
     plt.close()
     print("Saved: images/event_latency_correlation.png")
